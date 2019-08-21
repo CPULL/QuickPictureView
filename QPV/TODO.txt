@@ -1,0 +1,40 @@
+﻿!Use quick transition for the ratings using a dispatcher (do it in half a second)
+!Permit to alter the slideshow delay
+!Show the current delay when changing it
+!Save the ratings when exiting the application
+!Show only the images with a specific rating
+!Add Full Screen
+!Handle sub-folders
+!Remove the images from the json that are no more valid
+!Show on title how many images total, shown, rated
+!Add slideshow with increasing ratings
+!Don't save if we didn't do any change
+!Add Help page
+!Rework keys and statuses (Mode)
+!Add multiple buffering for the image and preload the next images (Prev-2, Prev-1, Current, Next+1, Next+2)
+!Add filter to show only image in current folder (the folder where the shown image is)
+!Remove automatic folder loading
+!Add option to add a new folder or replace the existing images folder (Key.O, Key.L)
+!After applying a filter, sorting, go back to normal or slide
+!If we have no tags, we should show this info when trying to tag. With a help message that allows to create new tags
+!Shift+F6 should open the tags editor
+!remember to do not handle the keys in case we are in tag def mode
+!Add tags to images
+!Remove close button for tags in case we are not in edit mode
+!Do a better image for Stars0-5
+!Add button to hide stars and tags (`)
+!Alter the selection of tags with just a row selection event
+!Add radio on sorting to sort together with filtering
+!Add filtering by tag
+!Write function to hide/show the filters
+!Reorganize Help with new sections
+!Remember to alter the enabledTags when changing the other tags globally
+!D find duplicated files (size and first Kb)
+!Set in the tag list a way to define "have/not have", update the filtering accordingly
+!Q quicktag
+!Update help for Q and D and the new way to find by tags
+
+
+
+FUTURE
+- associate names with avatar images and have a list of preview by avatar

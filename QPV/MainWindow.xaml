@@ -1,0 +1,287 @@
+﻿<Window x:Class="QPV.MainWindow"
+				xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+				xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+				xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+				xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+				mc:Ignorable="d"
+				Title="QPV" Closing="SaveJson"
+        Height="768" 
+        Width="1280" 
+        WindowStartupLocation="CenterScreen">
+  <Grid Name="TheGrid">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="*"/>
+    </Grid.ColumnDefinitions>
+
+    <!--  View/Slide -->
+    <Image Name="Image0" Margin="0,0,0,0" Grid.Row="0" Grid.Column="0"/>
+    <Image Name="Image1" Margin="0,0,0,0" Grid.Row="0" Grid.Column="0"/>
+    <Image Name="Image2" Margin="0,0,0,0" Grid.Row="0" Grid.Column="0"/>
+    <Image Name="Image3" Margin="0,0,0,0" Grid.Row="0" Grid.Column="0"/>
+    <Image Name="Image4" Margin="0,0,0,0" Grid.Row="0" Grid.Column="0"/>
+    <Image Name="Stars" Margin="0" Grid.Row="0" Grid.Column="0" Panel.ZIndex="1000" Width="0" HorizontalAlignment="Left" VerticalAlignment="Top" Stretch="UniformToFill" Height="32" Source="Images/Stars5.png"/>
+    <StackPanel Name="TagButtons" Orientation="Vertical" HorizontalAlignment="Right" Margin="0,0,8,0"/>
+    <Label Name="TimerLabel" Content="2 seconds" HorizontalAlignment="Right" Margin="0,0,8,0" VerticalAlignment="Top" Visibility="Hidden"/>
+
+    <!--  Rating/Tagging -->
+
+    <!--  Sort/Filter -->
+    <!--  TagsGrid, AndOrButton, SortByName, ByRating, ByPath, Randomize, FilterByRating (Exact) -->
+    <DataGrid Name="FilterTags" AutoGenerateColumns="False" Width="300" HorizontalAlignment="Left" Margin="0,24,0,0" Visibility="Hidden" SelectionChanged="OnSelectingFilter">
+      <DataGrid.Columns>
+        <DataGridTemplateColumn Header="  " Width="32">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate>
+              <Image Name="TagImage" Source="" Width="16"/>
+              <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding TagMode}" Value="1">
+                  <Setter TargetName="TagImage" Property="Source" Value="Images/Yes.png"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding TagMode}" Value="-1">
+                  <Setter TargetName="TagImage" Property="Source" Value="Images/No.png"/>
+                </DataTrigger>
+              </DataTemplate.Triggers>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+
+        <DataGridTextColumn Header="Tags" Binding="{Binding TagName}" IsReadOnly="True"/>
+      </DataGrid.Columns>
+    </DataGrid>
+    <Button Name="TagsAndOrMode" Content="AND mode" HorizontalAlignment="Left" Margin="2,2,0,0" VerticalAlignment="Top" Width="75" Click="OnChangeAndOr" Visibility="Hidden"/>
+    <CheckBox Name="OnlyNoTags" Content="Only without Tags" Margin="100,4,0,0" Checked="OnChangeOnlyNoTags" Width="120" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Hidden"/>
+    <Button Name="ApplyTags" Content="Apply" HorizontalAlignment="Left" Margin="470,400,0,0" VerticalAlignment="Top" Width="175" Visibility="Hidden" Click="OnApplyTagFilters" FontSize="24"/>
+
+
+
+    <Label Name="LRatings" Content="Ratings" HorizontalAlignment="Left" Margin="335,0,0,0" VerticalAlignment="Top"  FontSize="18" Visibility="Hidden"/>
+    <RadioButton Name="RRa" Content="All"        HorizontalAlignment="Left" Margin="340,40,0,0" VerticalAlignment="Top" GroupName="Rating" Checked="OnRadio" Visibility="Hidden"/>
+    <RadioButton Name="RRu" Content="Unrated"    HorizontalAlignment="Left" Margin="340,60,0,0" VerticalAlignment="Top" GroupName="Rating" Checked="OnRadio" Visibility="Hidden"/>
+    <RadioButton Name="RR0" Content="0 or more"  HorizontalAlignment="Left" Margin="340,80,0,0" VerticalAlignment="Top" GroupName="Rating" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="FilterByRating0" Margin="440,80" Width="80" Height="18" Click="OnSortFilterClick" Visibility="Hidden" HorizontalAlignment="Left" VerticalAlignment="Top">
+      <Image Source="Images/Stars0-5.png" Stretch="UniformToFill"/>
+    </Button>
+    <RadioButton Name="RR1" Content="1 or more"  HorizontalAlignment="Left" Margin="340,100,0,0" VerticalAlignment="Top" GroupName="Rating" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="FilterByRating1" Margin="440,100" Width="80" Height="18" Click="OnSortFilterClick" Visibility="Hidden" HorizontalAlignment="Left" VerticalAlignment="Top">
+      <Image Source="Images/Stars5.png" Stretch="UniformToFill"/>
+    </Button>
+    <RadioButton Name="RR2" Content="2 or more"  HorizontalAlignment="Left" Margin="340,120,0,0" VerticalAlignment="Top" GroupName="Rating" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="FilterByRating2" Margin="440,120" Width="80" Height="18" Click="OnSortFilterClick" Visibility="Hidden" VerticalAlignment="Top" HorizontalAlignment="Left">
+      <Image Source="Images/Stars2-5.png" Stretch="UniformToFill"/>
+    </Button>
+    <RadioButton Name="RR3" Content="3 or more"  HorizontalAlignment="Left" Margin="340,140,0,0" VerticalAlignment="Top" GroupName="Rating" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="FilterByRating3" Margin="440,140" Width="80" Height="18" Click="OnSortFilterClick" Visibility="Hidden" HorizontalAlignment="Left" VerticalAlignment="Top">
+      <Image Source="Images/Stars3-5.png" Stretch="UniformToFill"/>
+    </Button>
+    <RadioButton Name="RR4" Content="4 or more"  HorizontalAlignment="Left" Margin="340,160,0,0" VerticalAlignment="Top" GroupName="Rating" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="FilterByRating4" Margin="440,160" Width="80" Height="18" Click="OnSortFilterClick" Visibility="Hidden" VerticalAlignment="Top" HorizontalAlignment="Left">
+      <Image Source="Images/Stars4-5.png" Stretch="UniformToFill"/>
+    </Button>
+    <RadioButton Name="RR5" Content="5 or more"  HorizontalAlignment="Left" Margin="340,180,0,0" VerticalAlignment="Top" GroupName="Rating" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="FilterByRating5" Margin="440,180" Width="80" Height="18" Click="OnSortFilterClick" Visibility="Hidden" HorizontalAlignment="Left" VerticalAlignment="Top">
+      <Image Source="Images/Stars5-5.png" Stretch="UniformToFill"/>
+    </Button>
+    <RadioButton Name="RR0o" Content="0 only"     HorizontalAlignment="Left" Margin="340,200,0,0" VerticalAlignment="Top" GroupName="Rating" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="FilterByExactRating0" Margin="440,200" Width="80" Height="18" Click="OnSortFilterClick" Visibility="Hidden" HorizontalAlignment="Left" VerticalAlignment="Top">
+      <Image Source="Images/Stars0.png" Stretch="UniformToFill"/>
+    </Button>
+    <RadioButton Name="RR1o" Content="1 only"     HorizontalAlignment="Left" Margin="340,220,0,0" VerticalAlignment="Top" GroupName="Rating" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="FilterByExactRating1" Margin="440,220" Width="80" Height="18" Click="OnSortFilterClick" Visibility="Hidden" HorizontalAlignment="Left" VerticalAlignment="Top">
+      <Image Source="Images/Stars1.png" Stretch="UniformToFill"/>
+    </Button>
+    <RadioButton Name="RR2o" Content="2 only"     HorizontalAlignment="Left" Margin="340,240,0,0" VerticalAlignment="Top" GroupName="Rating" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="FilterByExactRating2" Margin="440,240" Width="80" Height="18" Click="OnSortFilterClick" Visibility="Hidden" HorizontalAlignment="Left" VerticalAlignment="Top">
+      <Image Source="Images/Stars2.png" Stretch="UniformToFill"/>
+    </Button>
+    <RadioButton Name="RR3o" Content="3 only"     HorizontalAlignment="Left" Margin="340,260,0,0" VerticalAlignment="Top" GroupName="Rating" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="FilterByExactRating3" Margin="440,260" Width="80" Height="18" Click="OnSortFilterClick" Visibility="Hidden" HorizontalAlignment="Left" VerticalAlignment="Top">
+      <Image Source="Images/Stars3.png" Stretch="UniformToFill"/>
+    </Button>
+    <RadioButton Name="RR4o" Content="4 only"     HorizontalAlignment="Left" Margin="340,280,0,0" VerticalAlignment="Top" GroupName="Rating" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="FilterByExactRating4" Margin="440,280" Width="80" Height="18" Click="OnSortFilterClick" Visibility="Hidden" HorizontalAlignment="Left" VerticalAlignment="Top">
+      <Image Source="Images/Stars4.png" Stretch="UniformToFill"/>
+    </Button>
+    <RadioButton Name="RR5o" Content="5 only"     HorizontalAlignment="Left" Margin="340,300,0,0" VerticalAlignment="Top" GroupName="Rating" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="FilterByExactRating5" Margin="440,300" Width="80" Height="18" Click="OnSortFilterClick" Visibility="Hidden" HorizontalAlignment="Left" VerticalAlignment="Top">
+      <Image Source="Images/Stars5-5.png" Stretch="UniformToFill"/>
+    </Button>
+
+    <Label Name="LSorting" Content="Sorting" HorizontalAlignment="Left" Margin="596,0,0,0" VerticalAlignment="Top" FontSize="18" Visibility="Hidden"/>
+    <RadioButton Name="RSn" Content="No sorting"     HorizontalAlignment="Left" Margin="600,40,0,0" VerticalAlignment="Top" GroupName="Sorting" Checked="OnRadio" Visibility="Hidden"/>
+    <RadioButton Name="RSr" Content="Random    "     HorizontalAlignment="Left" Margin="600,70,0,0" VerticalAlignment="Top" GroupName="Sorting" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="Randomize" Content="Randomize" HorizontalAlignment="Left" Margin="700,70,0,0" VerticalAlignment="Top" Width="120" Click="OnSortFilterClick" Visibility="Hidden"/>
+    <RadioButton Name="RSra" Content="Rating ⇑  "     HorizontalAlignment="Left" Margin="600,100,0,0" VerticalAlignment="Top" GroupName="Sorting" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="SortByRatingA" Content="Sort by Rating ⇑" HorizontalAlignment="Left" Margin="700,100,0,0" VerticalAlignment="Top" Width="120" Click="OnSortFilterClick" Visibility="Hidden" FontSize="10"/>
+    <RadioButton Name="RSrd" Content="Rating ⇓  "     HorizontalAlignment="Left" Margin="600,120,0,0" VerticalAlignment="Top" GroupName="Sorting" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="SortByRatingD" Content="Sort by Rating ⇓" HorizontalAlignment="Left" Margin="700,120,0,0" VerticalAlignment="Top" Width="120" Click="OnSortFilterClick" Visibility="Hidden" FontSize="10"/>
+    <RadioButton Name="RSna" Content="Name ⇑    "     HorizontalAlignment="Left" Margin="600,150,0,0" VerticalAlignment="Top" GroupName="Sorting" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="SortByNameA" Content="Sort by Name ⇑"     HorizontalAlignment="Left" Margin="700,150,0,0" VerticalAlignment="Top" Width="120" Click="OnSortFilterClick" Visibility="Hidden" FontSize="10"/>
+    <RadioButton Name="RSnd" Content="Name ⇓    "     HorizontalAlignment="Left" Margin="600,170,0,0" VerticalAlignment="Top" GroupName="Sorting" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="SortByNameD" Content="Sort by Name ⇓"     HorizontalAlignment="Left" Margin="700,170,0,0" VerticalAlignment="Top" Width="120" Click="OnSortFilterClick" Visibility="Hidden" FontSize="10"/>
+    <RadioButton Name="RSpa" Content="Path ⇑    "     HorizontalAlignment="Left" Margin="600,200,0,0" VerticalAlignment="Top" GroupName="Sorting" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="SortByPathA" Content="Sort by Path ⇑"     HorizontalAlignment="Left" Margin="700,200,0,0" VerticalAlignment="Top" Width="120" Click="OnSortFilterClick" Visibility="Hidden" FontSize="10"/>
+    <RadioButton Name="RSpd" Content="Path ⇓    "     HorizontalAlignment="Left" Margin="600,220,0,0" VerticalAlignment="Top" GroupName="Sorting" Checked="OnRadio" Visibility="Hidden"/>
+    <Button Name="SortByPathD" Content="Sort by Path ⇓"     HorizontalAlignment="Left" Margin="700,220,0,0" VerticalAlignment="Top" Width="120" Click="OnSortFilterClick" Visibility="Hidden" FontSize="10"/>
+
+    <Label Name="LQuickTags" Content="Quick Tag" Margin="900,0,0,0" Visibility="Hidden"/>
+    <DataGrid Name="QuickTags" AutoGenerateColumns="False" Width="300" HorizontalAlignment="Left" Margin="900,24,0,0" Visibility="Hidden" SelectionChanged="OnSelectingQuickTag">
+      <DataGrid.Columns>
+        <DataGridTemplateColumn Header="  " Width="32">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate>
+              <Image Name="TagImage" Source="" Width="16"/>
+              <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Selected}" Value="true">
+                  <Setter TargetName="TagImage" Property="Source" Value="Images/Yes.png"/>
+                </DataTrigger>
+              </DataTemplate.Triggers>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+
+        <DataGridTextColumn Header="Tags" Binding="{Binding Tag}" IsReadOnly="True"/>
+      </DataGrid.Columns>
+    </DataGrid>
+
+
+    <!--  Define tags -->
+    <!--  Grid, ErrorMissingTags -->
+    <TextBlock Name="StartMessage" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Visibility="Visible" xml:space="preserve">
+      <Span FontSize="20">Welcome to <Bold>Quick Picture View</Bold></Span><LineBreak/>
+      Open a folder of pictures with <Bold>O</Bold> or define the Tags with <Bold>F5</Bold>
+      Press <Bold>H</Bold> so see the help.
+    </TextBlock>
+    
+    <!--  Help -->
+    <TextBlock Name="Help" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" xml:space="preserve" Visibility="Hidden">
+<Bold>Quick Picture Viewer Help</Bold>:<LineBreak/>
+ <Bold>Modes</Bold>
+  - <Bold>F1</Bold>: Normal image browsing
+      <Bold>⇐</Bold>/<Bold>⇒</Bold> to go to next/previous, <Bold>⇑</Bold>/<Bold>⇓</Bold> to change the current image, <Bold>Home</Bold> go to first image, <Bold>End</Bold> go to last image
+      
+  - <Bold>F2</Bold>: SlideShow
+      <Bold>+</Bold> and <Bold>-</Bold> to increase/decrease the delay between images, use <Bold>Shift</Bold> to increase by half a second, <Bold>Space</Bold> to stop the slideshow, <Bold>⇐</Bold> previous image, 
+      <Bold>1-5</Bold> to quickly go to the first element with specified rating
+      
+  - <Bold>F3</Bold>: Rating/Tagging 
+      same as browsing but keys from <Bold>0</Bold> to <Bold>5</Bold> to give a rating to images
+      type a Tag name to associate it to the picture (use <Bold>⇑</Bold> and <Bold>⇓</Bold> to select the tag and <Bold>Enter</Bold> or <Bold>Space</Bold> to associate)
+      <Bold>Q</Bold> quick tag an image with the selected tag
+      
+  - <Bold>F4</Bold>: Filtering and Sorting
+      Define the Tags you want (or don't want) on the left (each click on a tag will cycle through <Italic>Must have</Italic>, <Italic>Should not have</Italic>, <Italic>Ignore</Italic>
+      Define a filter on Ratings and a Sort mode. Clicking on a rating or sorting button will immediately switch to view mode.
+      On the right you can select a Quick Tag. The <Bold>Q</Bold> character allows to quickly associate/remove the tag from the visible image (when Rating/Tagging)
+         <Italic>Warning because you cannot find tags containing the letter <Bold>Q</Bold> when in Quick Tag mode</Italic>
+      
+      Quick shortcuts:
+        <Bold>1-5</Bold> will show all images with rating equal or greater
+        <Bold>Shift</Bold> + <Bold>1-5</Bold> will show all images with exact rating
+        <Bold>Space</Bold> will show all images, with <Bold>Shift</Bold> only images without rating will be shown
+        <Bold>S</Bold> will sort the images ascending by rating (<Bold>Shift</Bold>+<Bold>S</Bold> for descending)
+        <Bold>N</Bold> will sort the images ascending by name (folders ignored) (<Bold>Shift</Bold>+<Bold>N</Bold> for descending)
+        <Bold>P</Bold> will sort the images ascending by path and name (<Bold>Shift</Bold>+<Bold>P</Bold> for descending)
+        <Bold>R</Bold> will randomize the images
+      
+  - <Bold>F5</Bold>: Definition of Tags
+      Here you can create, rename, and remove the tags that can be possible for the images
+      
+ <Bold>Escape</Bold> will exist the application
+ <Bold>F11</Bold> to switch between Fullscreen and Window modes
+ <Bold>`</Bold> to hide/show the rating and tags of an image
+ <Bold>F</Bold> will show only the images in the folder of the current image (press again to remove)
+ <Bold>O</Bold> will show a browser to select a folder (already loaded images will be replaced.) Use <Bold>Shift</Bold>+<Bold>O</Bold>> to load also from Sub-Folders
+ <Bold>L</Bold> will show a browser to select a folder (images will be added.) Use <Bold>Shift</Bold>+<Bold>L</Bold> to load also from Sub-Folders
+ <Bold>D</Bold> find duplicates in the selected files
+    </TextBlock>
+
+
+    <!--  Define tags -->
+    <!--  Grid, ErrorMissingTags -->
+    <TextBlock Name="NoTags" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Visibility="Hidden" xml:space="preserve">
+      No tags are found.
+      Define them by Tag editor (<Bold>Shift</Bold> + <Bold>F6</Bold>)<LineBreak/>
+      Tags are stored in a <Italic>Tags.json</Italic> file in the folder where the application is run.
+      Tags are shared for all images on the computer.
+    </TextBlock>
+    <DataGrid Name="dgTags" AutoGenerateColumns="False" Visibility="Hidden" RowEditEnding="OnRanameTag">
+      <DataGrid.Columns>
+        <DataGridTextColumn Header="ID" Binding="{Binding ID}" IsReadOnly="True" />
+        <DataGridTextColumn Header="Tag" Binding="{Binding TagName}"/>
+
+        <DataGridTemplateColumn Header="  " Width="24">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate>
+              <Button Name="btnRemoveTag" Click="OnRemoveTag"  Background="#FFDD2365">
+                <Image Source="Images/Close.png" />
+                <Button.Style>
+                  <Style TargetType="Button">
+                    <Setter Property="Visibility" Value="Hidden" />
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding IsLast}" Value="False">
+                        <Setter Property="Visibility" Value="Visible" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </Button.Style>
+              </Button>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+
+        <DataGridTemplateColumn Header="  " Width="24">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate>
+              <Button Name="btnAddtag"  Background="#FF23DD65" Click="OnAddTag">
+                <Image Source="Images/Add.png" />
+                <Button.Style>
+                  <Style TargetType="Button">
+                    <Setter Property="Visibility" Value="Hidden" />
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding IsLast}" Value="True">
+                        <Setter Property="Visibility" Value="Visible" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </Button.Style>
+              </Button>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+
+      </DataGrid.Columns>
+    </DataGrid>
+
+    <!-- List of duplicates -->
+    <Label Content="List of duplicates" Name="LDuplicates" Visibility="Hidden"/>
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="1*"/>
+        <ColumnDefinition Width="2*"/>
+      </Grid.ColumnDefinitions>
+      <DataGrid Name="Duplicates" Margin="0" Visibility="Hidden" SelectionChanged="OnPreviewDuplicate" AutoGenerateColumns="False">
+        <DataGrid.Columns>
+
+          <DataGridTextColumn Header="Path" Binding="{Binding Path}" IsReadOnly="True" />
+
+          <DataGridTemplateColumn Header="  " Width="24">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate>
+                <Button Click="OnDeleteImage" Background="#FFDD2365">
+                  <Image Source="Images/Close.png" />
+                </Button>
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          
+          <DataGridTextColumn Header="Duplicate" Binding="{Binding Duplicate}" IsReadOnly="True" />
+        </DataGrid.Columns>
+      </DataGrid>
+
+      <Image Name="PreviewImage" Margin="0,0,0,0" Grid.Row="0" Grid.Column="1"/>
+    </Grid>
+  </Grid>
+</Window>
