@@ -30,7 +30,7 @@
 
     <!--  Sort/Filter -->
     <!--  TagsGrid, AndOrButton, SortByName, ByRating, ByPath, Randomize, FilterByRating (Exact) -->
-    <DataGrid Name="FilterTags" AutoGenerateColumns="False" Width="300" HorizontalAlignment="Left" Margin="0,24,0,0" Visibility="Hidden" SelectionChanged="OnSelectingFilter">
+    <DataGrid Name="FilterTags" AutoGenerateColumns="False" Width="300" HorizontalAlignment="Left" Margin="0,24,0,0" SelectionChanged="OnSelectingFilter" Visibility="Hidden">
       <DataGrid.Columns>
         <DataGridTemplateColumn Header="  " Width="32">
           <DataGridTemplateColumn.CellTemplate>
@@ -53,6 +53,9 @@
     </DataGrid>
     <Button Name="TagsAndOrMode" Content="AND mode" HorizontalAlignment="Left" Margin="2,2,0,0" VerticalAlignment="Top" Width="75" Click="OnChangeAndOr" Visibility="Hidden"/>
     <CheckBox Name="OnlyNoTags" Content="Only without Tags" Margin="100,4,0,0" Checked="OnChangeOnlyNoTags" Width="120" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Hidden"/>
+    <Button Name="Invert" HorizontalAlignment="Left" Margin="276,0,0,0" VerticalAlignment="Top" Width="24" Visibility="Hidden" Click="OnInvertTags">
+      <Image Source="Images/Invert.png"/>
+    </Button>
     <Button Name="ApplyTags" Content="Apply" HorizontalAlignment="Left" Margin="470,400,0,0" VerticalAlignment="Top" Width="175" Visibility="Hidden" Click="OnApplyTagFilters" FontSize="24"/>
 
 

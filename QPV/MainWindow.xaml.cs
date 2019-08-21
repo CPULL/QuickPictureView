@@ -599,7 +599,7 @@ namespace QPV {
     }
 
     internal bool NoImageShown() {
-      return pos < 0 || sequence[pos] >= images.Count;
+      return pos < 0 || pos >= sequence.Count || sequence[pos] >= images.Count;
     }
 
     internal void ShowImageTags(ImageInfo img) {
@@ -881,7 +881,7 @@ namespace QPV {
         return;
       }
       else if (e.Key == Key.F4) {
-        if (!im.HasFiles() || im.NoImageShown()) return;
+        if (!im.HasFiles()) return;
         timer.Stop();
         dgTags.Visibility = Visibility.Hidden;
         Stars.Width = 0;
@@ -1293,6 +1293,7 @@ namespace QPV {
       FilterTags.Visibility = v;
       ApplyTags.Visibility = v;
       OnlyNoTags.Visibility = v;
+      Invert.Visibility = v;
       Randomize.Visibility = v;
       FilterByRating0.Visibility = v;
       FilterByRating1.Visibility = v;
@@ -1647,6 +1648,17 @@ namespace QPV {
         tagRefs.Remove(td.ID);
       if (enabledTags.Contains(td))
         enabledTags.Remove(td);
+
+      for(int i=0; i<quickTags.Count; i++)
+        if (quickTags[i].Index==td.ID) {
+          quickTags.RemoveAt(i);
+          break;
+        }
+      QuickTags.Dispatcher.Invoke(new Action(() => {
+        QuickTags.ItemsSource = null;
+        QuickTags.ItemsSource = quickTags;
+      }), DispatcherPriority.ContextIdle);
+
       TagButtons.Children.Remove(tagRefs[td.ID].button);
 
       UpdateGridThread();
@@ -1686,6 +1698,18 @@ namespace QPV {
         tagRefs[td.ID].tag = td.TagName;
         ((TextBox)tagRefs[td.ID].button.Children[0]).Text = td.TagName;
         tagsAltered = true;
+
+        // Rename also the quicktags
+        for (int i = 0; i < quickTags.Count; i++)
+          if (quickTags[i].Index == td.ID) {
+            quickTags[i].Tag = td.TagName;
+            break;
+          }
+        QuickTags.Dispatcher.Invoke(new Action(() => {
+          QuickTags.ItemsSource = null;
+          QuickTags.ItemsSource = quickTags;
+        }), DispatcherPriority.ContextIdle);
+
         _handleTagEdits = true;
       }
     }
@@ -1889,7 +1913,6 @@ namespace QPV {
       ShowFilters(false);
     }
 
-
     private void OnChangeOnlyNoTags(object sender, RoutedEventArgs e) {
       if (((CheckBox)sender).IsChecked ?? false) {
         for (int i = 0; i < enabledTags.Count; i++)
@@ -1935,6 +1958,15 @@ namespace QPV {
       MakeTagCloseButtonAvailable(false);
       ShowFilters(false);
       im.SetFilter();
+    }
+
+    private void OnInvertTags(object sender, RoutedEventArgs e) {
+      foreach (TagDef td in enabledTags)
+        if (td.TagMode == 0)
+          td.TagMode = 1;
+        else
+          td.TagMode = 0;
+      UpdateEnabledTagsGridThread();
     }
 
     private void OnRadio(object sender, RoutedEventArgs e) {

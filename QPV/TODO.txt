@@ -33,7 +33,7 @@
 !Set in the tag list a way to define "have/not have", update the filtering accordingly
 !Q quicktag
 !Update help for Q and D and the new way to find by tags
-
+!Remove the quick tags if we remove a tag, rename them if we rename a tag
 
 
 FUTURE
