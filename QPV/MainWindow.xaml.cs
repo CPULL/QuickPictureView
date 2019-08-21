@@ -700,11 +700,6 @@ namespace QPV {
     FilterSort = 3, // Filters the images, Sort and Randomize the images [F4]
     TagDefs = 5 // Define the list of Tags [F5]
   }
-  public enum SortingFIXME {
-    ByRating = 0,
-    ByName = 1,
-    ByPath = 2
-  }
   public enum ShowMode {
     Prev = 0,
     Same = 1,
@@ -945,8 +940,9 @@ namespace QPV {
             return;
           }
           Stars.Width = 0;
+          PreviewImage.Visibility = Visibility.Visible;
 
-          // FIXME show them as list, with the ability to preview the selected files (as normal images)
+          // Show them as list, with the ability to preview the selected files (as normal images)
           LDuplicates.Visibility = Visibility.Visible;
           Duplicates.Visibility = Visibility.Visible;
           Duplicates.ItemsSource = null;
@@ -1291,7 +1287,7 @@ namespace QPV {
       // These two are always set to invisible
       LDuplicates.Visibility = Visibility.Hidden;
       Duplicates.Visibility = Visibility.Hidden;
-
+      PreviewImage.Visibility = Visibility.Hidden;
 
       TagsAndOrMode.Visibility = v;
       FilterTags.Visibility = v;
