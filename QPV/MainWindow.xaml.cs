@@ -15,6 +15,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Collections.ObjectModel;
 using System.Windows.Media;
+using Colors;
 
 namespace QPV {
 
@@ -26,17 +27,18 @@ namespace QPV {
     List<int> sequence;
     List<string> folders;
     Dictionary<string, JObject> ratings;
+    Dictionary<string, JObject> hashes;
     MainWindow win;
     Random random;
     private int pos = -1;
     private DispatcherTimer starsTimer;
     private int starsToGo;
     private int totalRated;
-    public bool needSaving;
+    public bool needSavingTags;
 
 
     public IManager(MainWindow mainWindow) {
-      needSaving = false;
+      needSavingTags = false;
       currentImg = 0;
       loaded = new bool[5];
       positions = new int[5];
@@ -50,6 +52,7 @@ namespace QPV {
       sequence = new List<int>();
       folders = new List<string>();
       ratings = new Dictionary<string, JObject>();
+      hashes = new Dictionary<string, JObject>();
       random = new Random();
       starsTimer = new DispatcherTimer();
       starsTimer.Interval = TimeSpan.FromMilliseconds(5);
@@ -82,6 +85,8 @@ namespace QPV {
       for (int i = 0; i < folders.Count; i++) {
         if (!ratings.ContainsKey(folders[i]))
           ratings[folders[i]] = new JObject();
+        if (!hashes.ContainsKey(folders[i]))
+          hashes[folders[i]] = new JObject();
       }
 
       // Get the ratings from the Json
@@ -102,6 +107,11 @@ namespace QPV {
               images[i].Tags.Add(json[images[i].ImageName]["T"][t].ToObject<int>());
           }
 
+
+          json = hashes[path];
+          if (json[images[i].ImageName] != null)
+            images[i].UpdateHash(json[images[i].ImageName].ToObject<string>());
+
         } catch (Exception) {
           images[i].Rating = -1;
           images[i].Tags.Clear();
@@ -110,7 +120,7 @@ namespace QPV {
 
       Randomize();
 
-      // Remove from Json all keys that are no more valid
+      // Remove from ratings Json all keys that are no more valid
       foreach (string path in ratings.Keys) {
         JObject json = ratings[path];
         List<string> toRemove = new List<string>();
@@ -125,7 +135,26 @@ namespace QPV {
         }
         for (int i = 0; i < toRemove.Count; i++) {
           json.Remove(toRemove[i]);
-          needSaving = true;
+          needSavingTags = true;
+        }
+      }
+
+      // Remove from hashes Json all keys that are no more valid
+      foreach (string path in hashes.Keys) {
+        JObject json = hashes[path];
+        List<string> toRemove = new List<string>();
+        foreach (JProperty property in json.Properties()) {
+          bool found = false;
+          for (int i = 0; i < images.Count; i++)
+            if (images[i].ImageName == property.Name && images[i].Path == path) {
+              found = true;
+              break;
+            }
+          if (!found) toRemove.Add(property.Name);
+        }
+        for (int i = 0; i < toRemove.Count; i++) {
+          json.Remove(toRemove[i]);
+          needSavingTags = true;
         }
       }
 
@@ -185,9 +214,10 @@ namespace QPV {
         bm.UriSource = new Uri(path);
         bm.EndInit();
         im.Source = bm;
-      } catch (Exception) {
+      } catch (Exception e) {
         Uri oUri = new Uri("pack://application:,,,/Images/NotValid.png", UriKind.RelativeOrAbsolute);
         im.Source = BitmapFrame.Create(oUri);
+        Trace.Write(e.Message);
       }
       loaded[nextPos] = true;
     }
@@ -270,6 +300,119 @@ namespace QPV {
       }
       title += images[sequence[pos]].ImageName + " [" + pos + "/" + sequence.Count + " " + totalRated + "/" + images.Count + "]";
       win.Title = title;
+
+      if (win.similarActive) {
+        win.ShowSelectedSimilarBorder();
+        if (images[sequence[pos]].Closest[0] != -1) {
+          try {
+            BitmapImage bm = new BitmapImage();
+            bm.BeginInit();
+            bm.UriSource = new Uri(images[images[sequence[pos]].Closest[0]].Path + "\\" + images[images[sequence[pos]].Closest[0]].ImageName);
+            bm.EndInit();
+            win.C0.Source = bm;
+            win.B0.BorderBrush = win.selectedSimilar == 0 ? win.borderImgSel : win.borderImgInv;
+            win.R0.Visibility = Visibility.Visible;
+            win.P0.Visibility = Visibility.Visible;
+            win.R0.Width = 128 - 128 * images[sequence[pos]].Distance[0] / win.maxDistance;
+            win.P0.Content = (int)(100 - 100 * images[sequence[pos]].Distance[0] / win.maxDistance) + "%";
+          } catch (Exception) {
+            Uri oUri = new Uri("pack://application:,,,/Images/NotValid.png", UriKind.RelativeOrAbsolute);
+            win.C0.Source = BitmapFrame.Create(oUri);
+          }
+        }
+        else {
+          win.C0.Source = null;
+          win.B0.BorderBrush = win.borderImgInv;
+          win.R0.Visibility = Visibility.Hidden;
+          win.P0.Visibility = Visibility.Hidden;
+        }
+
+        if (images[sequence[pos]].Closest[1] != -1) {
+          try {
+            BitmapImage bm = new BitmapImage();
+            bm.BeginInit();
+            bm.UriSource = new Uri(images[images[sequence[pos]].Closest[1]].Path + "\\" + images[images[sequence[pos]].Closest[1]].ImageName);
+            bm.EndInit();
+            win.C1.Source = bm;
+            win.B1.BorderBrush = win.selectedSimilar == 1 ? win.borderImgSel : win.borderImgInv;
+            win.R1.Visibility = Visibility.Visible;
+            win.P1.Visibility = Visibility.Visible;
+            win.R1.Width = 128 - 128 * images[sequence[pos]].Distance[1] / win.maxDistance;
+            win.P1.Content = (int)(100 - 100 * images[sequence[pos]].Distance[1] / win.maxDistance) + "%";
+          } catch (Exception) {
+            Uri oUri = new Uri("pack://application:,,,/Images/NotValid.png", UriKind.RelativeOrAbsolute);
+            win.C1.Source = BitmapFrame.Create(oUri);
+          }
+        }
+        else {
+          win.C1.Source = null;
+          win.B1.BorderBrush = win.borderImgInv;
+          win.R1.Visibility = Visibility.Hidden;
+          win.P1.Visibility = Visibility.Hidden;
+        }
+
+        if (images[sequence[pos]].Closest[2] != -1) {
+          try {
+            BitmapImage bm = new BitmapImage();
+            bm.BeginInit();
+            bm.UriSource = new Uri(images[images[sequence[pos]].Closest[2]].Path + "\\" + images[images[sequence[pos]].Closest[2]].ImageName);
+            bm.EndInit();
+            win.C2.Source = bm;
+            win.B2.BorderBrush = win.selectedSimilar == 2 ? win.borderImgSel : win.borderImgInv;
+            win.R2.Visibility = Visibility.Visible;
+            win.P2.Visibility = Visibility.Visible;
+            win.R2.Width = 128 - 128 * images[sequence[pos]].Distance[2] / win.maxDistance;
+            win.P2.Content = (int)(100 - 100 * images[sequence[pos]].Distance[2] / win.maxDistance) + "%";
+          } catch (Exception) {
+            Uri oUri = new Uri("pack://application:,,,/Images/NotValid.png", UriKind.RelativeOrAbsolute);
+            win.C2.Source = BitmapFrame.Create(oUri);
+          }
+        }
+        else {
+          win.C2.Source = null;
+          win.B2.BorderBrush = win.borderImgInv;
+          win.R2.Visibility = Visibility.Hidden;
+          win.P2.Visibility = Visibility.Hidden;
+        }
+
+        if (images[sequence[pos]].Closest[3] != -1) {
+          try {
+            BitmapImage bm = new BitmapImage();
+            bm.BeginInit();
+            bm.UriSource = new Uri(images[images[sequence[pos]].Closest[3]].Path + "\\" + images[images[sequence[pos]].Closest[3]].ImageName);
+            bm.EndInit();
+            win.C3.Source = bm;
+            win.B3.BorderBrush = win.selectedSimilar == 3 ? win.borderImgSel : win.borderImgInv;
+            win.R3.Visibility = Visibility.Visible;
+            win.P3.Visibility = Visibility.Visible;
+            win.R3.Width = 128 - 128 * images[sequence[pos]].Distance[3] / win.maxDistance;
+            win.P3.Content = (int)(100 - 100 * images[sequence[pos]].Distance[3] / win.maxDistance) + "%";
+          } catch (Exception) {
+            Uri oUri = new Uri("pack://application:,,,/Images/NotValid.png", UriKind.RelativeOrAbsolute);
+            win.C3.Source = BitmapFrame.Create(oUri);
+          }
+        }
+        else {
+          win.C3.Source = null;
+          win.B3.BorderBrush = win.borderImgInv;
+          win.R3.Visibility = Visibility.Hidden;
+          win.P3.Visibility = Visibility.Hidden;
+        }
+      }
+      else {
+        win.C0.Source = null;
+        win.B0.BorderBrush = win.borderImgInv;
+        win.R0.Visibility = Visibility.Hidden;
+        win.C1.Source = null;
+        win.B1.BorderBrush = win.borderImgInv;
+        win.R1.Visibility = Visibility.Hidden;
+        win.C2.Source = null;
+        win.B2.BorderBrush = win.borderImgInv;
+        win.R2.Visibility = Visibility.Hidden;
+        win.C3.Source = null;
+        win.B3.BorderBrush = win.borderImgInv;
+        win.R3.Visibility = Visibility.Hidden;
+      }
     }
 
 
@@ -302,7 +445,7 @@ namespace QPV {
       if (pos == -1) return;
       if (images[sequence[pos]].Rating != rating) {
         totalRated++;
-        needSaving = true;
+        needSavingTags = true;
       }
       images[sequence[pos]].Rating = rating;
       starsToGo = 32 * rating;
@@ -310,22 +453,37 @@ namespace QPV {
     }
 
     internal void SaveJson() {
-      if (!needSaving) return;
-      for (int i = 0; i < images.Count; i++) {
-        JObject json = ratings[images[i].Path];
-        json[images[i].ImageName] = new JObject();
-        json[images[i].ImageName]["R"] = images[i].Rating;
-        JArray a = new JArray();
-        foreach (int t in images[i].Tags) {
-          a.Add(t);
+      if (needSavingTags) {
+        for (int i = 0; i < images.Count; i++) {
+          JObject json = ratings[images[i].Path];
+          json[images[i].ImageName] = new JObject();
+          json[images[i].ImageName]["R"] = images[i].Rating;
+          JArray a = new JArray();
+          foreach (int t in images[i].Tags) {
+            a.Add(t);
+          }
+          json[images[i].ImageName]["T"] = a;
         }
-        json[images[i].ImageName]["T"] = a;
-      }
 
-      foreach (string path in ratings.Keys) {
-        string js = JsonConvert.SerializeObject(ratings[path]);
-        File.Delete(path + "\\ratings.json");
-        File.WriteAllText(path + "\\ratings.json", js, System.Text.Encoding.UTF8);
+        foreach (string path in ratings.Keys) {
+          string js = JsonConvert.SerializeObject(ratings[path]);
+          File.Delete(path + "\\ratings.json");
+          File.WriteAllText(path + "\\ratings.json", js, System.Text.Encoding.UTF8);
+        }
+      }
+      if (win.similarUpdated) {
+        foreach (string path in ratings.Keys) {
+          JObject json = new JObject();
+          for (int i = 0; i < images.Count; i++) {
+            ImageInfo img = images[i];
+            if (img.Path == path && img._hashL != null) {
+              json[img.ImageName] = img.SerializeHashes();
+            }
+          }
+          string js = JsonConvert.SerializeObject(json);
+          File.Delete(path + "\\hashes.json");
+          File.WriteAllText(path + "\\hashes.json", js, System.Text.Encoding.UTF8);
+        }
       }
     }
 
@@ -335,7 +493,7 @@ namespace QPV {
       bool checkTags = win.OnlyNoTags.IsChecked ?? false;
       if (!checkTags) {
         for (i = 0; i < win.enabledTags.Count; i++)
-          if (win.enabledTags[i].TagMode!=0) {
+          if (win.enabledTags[i].TagMode != 0) {
             checkTags = true;
             break;
           }
@@ -472,10 +630,13 @@ namespace QPV {
       }
     }
 
-    internal void AddRatings(string path, string ratingFullName) {
+    internal void AddRatingsHashes(string path, string ratingFullName, bool rating) {
       try {
         JObject r = JsonConvert.DeserializeObject<dynamic>(File.ReadAllText(ratingFullName));
-        ratings[path] = r;
+        if (rating)
+          ratings[path] = r;
+        else
+          hashes[path] = r;
       } catch (Exception) {
         // No ratings
       }
@@ -579,10 +740,10 @@ namespace QPV {
     }
 
     internal void CleanUp() {
-      if (needSaving)
+      if (needSavingTags)
         SaveJson();
 
-      needSaving = false;
+      needSavingTags = false;
       currentImg = 0;
       for (int i = 0; i < 5; i++) {
         loaded[i] = false;
@@ -592,9 +753,20 @@ namespace QPV {
       images.Clear();
       folders.Clear();
       ratings.Clear();
+      hashes.Clear();
       sequence.Clear();
       starsTimer.Stop();
       win.Stars.Width = 0;
+      win.B0.Visibility = Visibility.Hidden;
+      win.B1.Visibility = Visibility.Hidden;
+      win.B2.Visibility = Visibility.Hidden;
+      win.B3.Visibility = Visibility.Hidden;
+      win.C0.Visibility = Visibility.Hidden;
+      win.C1.Visibility = Visibility.Hidden;
+      win.C2.Visibility = Visibility.Hidden;
+      win.C3.Visibility = Visibility.Hidden;
+      win.selectedSimilar = -1;
+      win.similarActive = false;
       pos = 0;
     }
 
@@ -672,7 +844,7 @@ namespace QPV {
       images.RemoveAt(imgIndex);
       int seqPos = -1;
       for (int i = 0; i < sequence.Count; i++)
-        if (sequence[i]==imgIndex) {
+        if (sequence[i] == imgIndex) {
           seqPos = i;
           break;
         }
@@ -681,8 +853,8 @@ namespace QPV {
     }
 
     internal void RecalculateDuplicateIndexes(List<DuplicateImage> dups) {
-      for(int i=0; i<dups.Count; i++) {
-        for (int j=0; j<images.Count; j++) {
+      for (int i = 0; i < dups.Count; i++) {
+        for (int j = 0; j < images.Count; j++) {
           string path = images[j].Path + "\\" + images[j].ImageName;
           if (dups[i].Path == path || dups[i].Duplicate == path) {
             dups[i].ImgIndex = j;
@@ -691,6 +863,345 @@ namespace QPV {
         }
       }
     }
+
+
+    public class CHTP {
+      public bool force; // Force the recalculation
+      public int[] set; // Small vector of image indexes to process
+      public int len; // Lenght of the valid items in the set
+      public int prog; // Progress done on the set
+      public int pixelOffset; // Used to define how broad the checking of distances should be
+      public bool needMore; // Set to True by the task when the set is completed
+
+      public ManualResetEventSlim toWaitOn;
+
+      public CHTP(bool f) {
+        set = new int[16];
+        len = 0;
+        prog = 0;
+        force = f;
+        pixelOffset = 0;
+        needMore = true;
+        toWaitOn = new ManualResetEventSlim(false);
+      }
+    };
+
+    public void CalculateHashThread(object parameters) {
+      CHTP pars = (CHTP)parameters;
+
+      while (true) {
+        pars.toWaitOn.Wait();
+        pars.needMore = false;
+        for (int i = 0; i < pars.len; i++) {
+          if (images[pars.set[i]].CalculateHash(pars.force, win.blurDiff))
+            win.similarUpdated = true;
+          Thread.Sleep(10);
+          pars.prog++;
+        }
+        pars.needMore = true;
+        GC.Collect();
+        pars.toWaitOn.Reset();
+      }
+    }
+
+    public void CalculateDistancesThread(object parameters) {
+      CHTP pars = (CHTP)parameters;
+
+      while (true) {
+        pars.toWaitOn.Wait();
+        pars.needMore = false;
+        for (int i = 0; i < pars.len; i++) {
+          for (int j = pars.set[i] + 1; j < images.Count; j++) {
+            if (pars.set[i] == j) continue;
+            double distance = CalculateDistance(images[pars.set[i]], images[j], win.lumaWeight, win.chromaWeight, pars.pixelOffset);
+            if (distance > win.maxDistance) continue; // Too far
+            images[pars.set[i]].SetDistance(distance, j);
+            images[j].SetDistance(distance, pars.set[i]);
+          }
+          Thread.Sleep(10);
+          pars.prog++;
+        }
+        pars.needMore = true;
+        pars.toWaitOn.Reset();
+      }
+    }
+
+    internal void CalculateHash(bool force, int pixelOffset) {
+      win.PBar.Visibility = Visibility.Visible;
+      win.PBar.Maximum = images.Count;
+      win.PBar.Value = 0;
+      Stopwatch watch = Stopwatch.StartNew();
+
+      // Start the threads
+      int numThreads = 6;
+      Thread[] threads = new Thread[numThreads];
+      CHTP[] chtps = new CHTP[numThreads];
+      for (int i = 0; i < numThreads; i++) {
+        threads[i] = new Thread(new ParameterizedThreadStart(CalculateHashThread));
+        chtps[i] = new CHTP(force);
+        threads[i].Start(chtps[i]);
+      }
+
+
+      int secs = 0;
+      int mins = 0;
+      int hours = 0;
+
+      win.Title = "Calculating hashes...";
+      int done = 0;
+      int start = 0;
+      while (done < images.Count) {
+        // Update the value of the progress with all the progresses of the threads
+        done = 0;
+        for (int i = 0; i < numThreads; i++) {
+          done += chtps[i].prog;
+        }
+
+        // Update the progress
+        long elapsedMs = watch.ElapsedMilliseconds;
+        double remaining = 1.0 * (images.Count - done) * elapsedMs / (done == 0 ? 1 : done);
+        secs = (int)remaining / 1000 % 60;
+        mins = ((int)remaining / 1000) / 60 % 60;
+        hours = ((int)remaining / 3600000);
+
+        win.PBar.Dispatcher.Invoke(new Action(() => {
+          win.PBar.Value = done;
+          win.Title = "Calculating hashes... (" + done + "/" + images.Count + ")  ETA " + hours + ":" + (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
+        }), DispatcherPriority.ContextIdle);
+
+        // Find which thread need some data and feed them with data
+        for (int i = 0; i < numThreads; i++) {
+          if (chtps[i].needMore) {
+            chtps[i].len = 0;
+            for (int j = 0; j < 16; j++) {
+              if (j + start < images.Count) {
+                chtps[i].set[j] = start + j;
+                chtps[i].len++;
+              }
+              else break;
+            }
+            if (chtps[i].len > 0) {
+              chtps[i].toWaitOn.Set();
+              start += chtps[i].len;
+            }
+          }
+        }
+
+        Thread.Sleep(1500);
+      }
+
+      bool completed = false;
+      while (!completed) {
+        completed = true;
+        for(int i=0; i<numThreads; i++)
+          if (!chtps[i].needMore) {
+            completed = false;
+            break;
+          }
+        Thread.Sleep(1000);
+      }
+      for (int i = 0; i < numThreads; i++)
+        threads[i].Abort();
+
+      watch.Stop();
+      long hashTime = watch.ElapsedMilliseconds;
+
+      for (int i = 0; i < images.Count; i++)
+        for (int j = 0; j < 4; j++)
+          images[i].Distance[j] = 1000000000;
+
+      win.Title = "Finding closest images";
+      for (int i = 0; i < numThreads; i++) {
+        threads[i] = new Thread(new ParameterizedThreadStart(CalculateDistancesThread));
+        chtps[i].len = 0;
+        chtps[i].prog = 0;
+        chtps[i].pixelOffset = pixelOffset;
+        chtps[i].needMore = true;
+        threads[i].Start(chtps[i]);
+      }
+
+      win.PBar.Value = 0;
+      Thread.Sleep(25);
+      watch.Restart();
+
+      done = 0;
+      start = 0;
+      while (done < images.Count) {
+        // Update the value of the progress with all the progresses of the threads
+        done = 0;
+        for (int i = 0; i < numThreads; i++) {
+          done += chtps[i].prog;
+        }
+
+        // Update the progress
+        long elapsedMs = watch.ElapsedMilliseconds;
+        double remaining = 1.0 * (images.Count - done) * elapsedMs / (done == 0 ? 1 : done);
+        secs = (int)remaining / 1000 % 60;
+        mins = ((int)remaining / 1000) / 60 % 60;
+        hours = ((int)remaining / 3600000);
+
+        win.PBar.Dispatcher.Invoke(new Action(() => {
+          win.PBar.Value = done;
+          win.Title = "Finding closest images... (" + done + "/" + images.Count + ")  ETA " + hours + ":" + (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
+        }), DispatcherPriority.ContextIdle);
+
+        // Find which thread need some data and feed them with data
+        for (int i = 0; i < numThreads; i++) {
+          if (chtps[i].needMore) {
+            chtps[i].len = 0;
+            for (int j = 0; j < 16; j++) {
+              if (j + start < images.Count) {
+                chtps[i].set[j] = start + j;
+                chtps[i].len++;
+              }
+              else break;
+            }
+            if (chtps[i].len > 0) {
+              chtps[i].toWaitOn.Set();
+              start += chtps[i].len;
+            }
+          }
+        }
+
+        Thread.Sleep(1500);
+      }
+
+
+
+      secs = (int)hashTime / 1000 % 60;
+      mins = ((int)hashTime / 1000) / 60 % 60;
+      hours = ((int)hashTime / 3600000);
+      string hashTimeS = hours + ":" + (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
+      secs = (int)watch.ElapsedMilliseconds / 1000 % 60;
+      mins = ((int)watch.ElapsedMilliseconds / 1000) / 60 % 60;
+      hours = ((int)watch.ElapsedMilliseconds / 3600000);
+
+      win.Title = "QPV Total time: Hashes = " + hashTimeS + " Distance = " + hours + ":" + (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
+      watch.Stop();
+
+      completed = false;
+      while (!completed) {
+        completed = true;
+        for (int i = 0; i < numThreads; i++)
+          if (!chtps[i].needMore) {
+            completed = false;
+            break;
+          }
+        Thread.Sleep(1000);
+      }
+      for (int i = 0; i < numThreads; i++)
+        threads[i].Abort();
+
+      win.PBar.Visibility = Visibility.Hidden;
+    }
+
+    private double CalculateDistance(ImageInfo src, ImageInfo dst, double lumaWeight, double chromaWeight, int pixelOffset) {
+      if (src._hashL == null || dst._hashL == null || src._hashC == null || dst._hashC == null)
+        return 1000000000.0;
+
+      // Go from 16x16 and reduce to 14x14 (pixel movement up to 4 pixels)
+      // Find the closest euclidean distance inside the block
+      // Calculate the best distance, but increase the distance in case the areas are smaller
+      // Return the best (minor) distance
+
+      double bestDistance = 1000000000.0;
+      for (int sbsx = 16; sbsx > 15 - pixelOffset; sbsx--)
+        for (int sbsy = 16; sbsy > 15 - pixelOffset; sbsy--) {
+
+          // Where the sub-block should start and how many steps we can check?
+          int stepsx = 17 - sbsx;
+          int stepsy = 17 - sbsy;
+
+          for (int stepx = 0; stepx < stepsx; stepx++)
+            for (int stepy = 0; stepy < stepsy; stepy++) {
+              // The block will be (stepx, stepy)-(stepx+sbsx, stepy+sbsy)
+
+
+              // We need to calculate the euclidean distance in the same sub-region and get the lower distance (+256*area of block)
+              for (int dstepx = 0; dstepx < stepsx; dstepx++)
+                for (int dstepy = 0; dstepy < stepsy; dstepy++) {
+
+                  double distanceL = 0;
+                  double distanceC = 0;
+                  for (int x = 0; x < sbsx; x++)
+                    for (int y = 0; y < sbsy; y++) {
+                      double pointL = src._hashL[stepx + x + 16 * (stepy + y)] - dst._hashL[dstepx + x + 16 * (dstepy + y)];
+                      double pointC = src._hashC[stepx + x + 16 * (stepy + y)] - dst._hashC[dstepx + x + 16 * (dstepy + y)];
+                      distanceL += pointL * pointL;
+                      distanceC += pointC * pointC;
+                    }
+                  // Normalize by the area of the block
+                  distanceL += 64 * 64 * (256 - sbsx * sbsy);
+                  distanceC += 64 * 64 * (256 - sbsx * sbsy);
+                  distanceL = Math.Sqrt(distanceL) / 256;
+                  distanceC = Math.Sqrt(distanceC) / 256;
+
+                  double distance = lumaWeight * distanceL + chromaWeight * distanceC;
+                  if (bestDistance > distance)
+                    bestDistance = distance;
+                }
+            }
+
+        }
+
+      return bestDistance;
+    }
+
+    void CalculateHistograms(Image h, ImageInfo src, ImageInfo dst) {
+      DrawingVisual drawingVisual = new DrawingVisual();
+      DrawingContext drawingContext = drawingVisual.RenderOpen();
+
+      Pen blue = new Pen(Brushes.Blue, 1);
+      Pen green = new Pen(Brushes.LawnGreen, 1);
+
+      byte[] diffsL = new byte[256];
+      byte[] diffsC = new byte[256];
+      for (int i = 0; i < 256; i++) {
+        diffsL[i] = (byte)Math.Abs(src._hashL[i] - dst._hashL[i]);
+        diffsC[i] = (byte)Math.Abs(src._hashC[i] - dst._hashC[i]);
+
+        int x = i % 16;
+        int y = i / 16;
+
+        SolidColorBrush scb = new SolidColorBrush(Color.FromArgb(255, (byte)(255 - diffsL[i]), (byte)(255 - diffsC[i]), 128));
+
+        drawingContext.DrawRectangle(
+          scb,
+          new Pen(scb, 1),
+          new Rect(new Point(4 * x, 4 * y), new Point(4 * x + 3, 4 * y + 3))
+        );
+      }
+      drawingContext.Close();
+
+      RenderTargetBitmap bmp = new RenderTargetBitmap(64, 64, 96, 96, PixelFormats.Pbgra32);
+      bmp.Render(drawingVisual);
+
+      h.Source = bmp;
+    }
+
+    internal void ShowMostSimilarImage() {
+      if (win.selectedSimilar == -1 || !win.similarActive) return;
+      ImageInfo img = GetImageInfo();
+      if (img.Closest[win.selectedSimilar] != -1) {
+        for (int i = 0; i < sequence.Count; i++) {
+          if (sequence[i] == img.Closest[win.selectedSimilar]) {
+            pos = i;
+            ShowImg(ShowMode.Same);
+            win.selectedSimilar = -1;
+            win.B0.BorderBrush = win.borderImgInv;
+            win.B1.BorderBrush = win.borderImgInv;
+            win.B2.BorderBrush = win.borderImgInv;
+            win.B3.BorderBrush = win.borderImgInv;
+            return;
+          }
+        }
+      }
+    }
+
+    internal ImageInfo GetImageInfo(int v) {
+      if (v == -1) return null;
+      return images[v];
+    }
   }
 
   public enum Mode {
@@ -698,7 +1209,8 @@ namespace QPV {
     Slide = 1, // Automatic progress of slide show, Left/Right will still work  [F2]
     RatingsTagging = 2, // Define Tags and Rating of the image [F3]
     FilterSort = 3, // Filters the images, Sort and Randomize the images [F4]
-    TagDefs = 5 // Define the list of Tags [F5]
+    TagDefs = 5, // Define the list of Tags [F5]
+    ScanImages = 6 // Scan the loaded images to find similar images
   }
   public enum ShowMode {
     Prev = 0,
@@ -735,6 +1247,18 @@ namespace QPV {
     public bool ratingsVisible = true;
     public FilterMode chosenFilter = FilterMode.All;
     public SortMode chosenSort = SortMode.None;
+    public int selectedSimilar = -1;
+    public bool similarActive = false;
+    public bool similarUpdated = false;
+
+    // FIXME
+
+    // If any of the hashes is updated make it true. When closing, find for all paths, all the images of each path, then create a json with the values. On loading a folder try to check if the Json is there, in case load it and manually update the hashes of the images
+    public double lumaWeight;
+    public double chromaWeight;
+    public double maxDistance;
+    public double blurDiff;
+
 
     public MainWindow() {
       InitializeComponent();
@@ -905,9 +1429,26 @@ namespace QPV {
         Stars.Width = 0;
         return;
       }
+      else if (e.Key == Key.F6) {
+        if (!im.HasFiles()) return;
+        timer.Stop();
+        dgTags.Visibility = Visibility.Hidden;
+        Stars.Width = 0;
+        prevMode = (mode == Mode.Slide ? Mode.Slide : Mode.Normal);
+        mode = Mode.ScanImages;
+        Title = "QPV Scanning images";
+        MakeTagCloseButtonAvailable(false);
+        ShowFilters(false);
+        ShowSimilarityParameters(true);
+        return;
+      }
+      else if (e.Key == Key.F7) {
+        QPV2.WinImg wi = new QPV2.WinImg();
+        wi.Show();
+      }
 
-      // Normal mode
-      if (mode == Mode.Normal) {
+        // Normal mode
+        if (mode == Mode.Normal) {
         if (e.Key == Key.Left)
           im.ShowPrevImage();
         else if (e.Key == Key.Right)
@@ -916,6 +1457,52 @@ namespace QPV {
           im.AlterImage(true);
         else if (e.Key == Key.Down)
           im.AlterImage(false);
+        else if (e.Key == Key.PageUp && similarActive) {
+          ImageInfo img = im.GetImageInfo();
+          selectedSimilar--;
+          if (selectedSimilar == -1) selectedSimilar = 3;
+          if (img.Closest[selectedSimilar] == -1) {
+            if (selectedSimilar == 3) {
+              if (img.Closest[2] != -1)
+                selectedSimilar = 2;
+              else if (img.Closest[1] != -1)
+                selectedSimilar = 1;
+              else if (img.Closest[0] != -1)
+                selectedSimilar = 0;
+              else
+                selectedSimilar = -1;
+            }
+            else if (selectedSimilar == 2) {
+              if (img.Closest[1] != -1)
+                selectedSimilar = 1;
+              else if (img.Closest[0] != -1)
+                selectedSimilar = 0;
+              else
+                selectedSimilar = -1;
+            }
+            else if (selectedSimilar == 1) {
+              if (img.Closest[0] != -1)
+                selectedSimilar = 0;
+              else
+                selectedSimilar = -1;
+            }
+          }
+          ShowSelectedSimilarBorder();
+        }
+        else if (e.Key == Key.PageDown && similarActive) {
+          ImageInfo img = im.GetImageInfo();
+          selectedSimilar++;
+          if (selectedSimilar == 4) selectedSimilar = 0;
+          if (img.Closest[selectedSimilar] == -1) {
+            if (img.Closest[0] != -1)
+              selectedSimilar = 0;
+            else
+              selectedSimilar = -1;
+          }
+          ShowSelectedSimilarBorder();
+        }
+        else if (e.Key == Key.Enter && similarActive)
+          im.ShowMostSimilarImage();
         else if (e.Key == Key.Home)
           im.SetPos(true);
         else if (e.Key == Key.End)
@@ -931,6 +1518,8 @@ namespace QPV {
           if (!im.HasFiles()) {
             StartMessage.Visibility = Visibility.Visible;
           }
+          e.Handled = true;
+          return;
         }
         else if (e.Key == Key.D) { // Find duplicates
           if (!im.HasFiles()) return;
@@ -1048,7 +1637,7 @@ namespace QPV {
           return;
         }
 
-        if (quickTag!=-1 && e.Key==Key.Q) {
+        if (quickTag != -1 && e.Key == Key.Q) {
           ImageInfo img = im.GetImageInfo();
           if (img == null) return;
           if (img.Tags.Contains(quickTag))
@@ -1146,7 +1735,7 @@ namespace QPV {
                   img.Tags.Add(imageTags[i].id);
                 imageTags[i].opacity = 1.0;
                 SelectImageTag(i, false);
-                im.needSaving = true;
+                im.needSavingTags = true;
 
                 return;
               }
@@ -1281,6 +1870,69 @@ namespace QPV {
 
     }
 
+    public void ShowSelectedSimilarBorder() {
+      B0.BorderBrush = selectedSimilar == 0 ? borderImgSel : borderImgInv;
+      B1.BorderBrush = selectedSimilar == 1 ? borderImgSel : borderImgInv;
+      B2.BorderBrush = selectedSimilar == 2 ? borderImgSel : borderImgInv;
+      B3.BorderBrush = selectedSimilar == 3 ? borderImgSel : borderImgInv;
+
+      ImageInfo img = im.GetImageInfo();
+      if (img == null || img.bmpL == null || img.bmpC == null) return;
+      using (MemoryStream memory = new MemoryStream()) {
+        img.bmpL.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
+        memory.Position = 0;
+        BitmapImage bitmapImage = new BitmapImage();
+        bitmapImage.BeginInit();
+        bitmapImage.StreamSource = memory;
+        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+        bitmapImage.EndInit();
+        bitmapImage.Freeze();
+        SrcL.Source = bitmapImage;
+      }
+      using (MemoryStream memory = new MemoryStream()) {
+        img.bmpC.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
+        memory.Position = 0;
+        BitmapImage bitmapImage = new BitmapImage();
+        bitmapImage.BeginInit();
+        bitmapImage.StreamSource = memory;
+        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+        bitmapImage.EndInit();
+        bitmapImage.Freeze();
+        SrcC.Source = bitmapImage;
+      }
+
+      if (selectedSimilar == -1) {
+        DstL.Source = null;
+        DstC.Source = null;
+        return;
+      }
+
+      ImageInfo dst = im.GetImageInfo(img.Closest[selectedSimilar]);
+      if (dst == null || dst.bmpL == null || dst.bmpC == null) return;
+      using (MemoryStream memory = new MemoryStream()) {
+        dst.bmpL.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
+        memory.Position = 0;
+        BitmapImage bitmapImage = new BitmapImage();
+        bitmapImage.BeginInit();
+        bitmapImage.StreamSource = memory;
+        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+        bitmapImage.EndInit();
+        bitmapImage.Freeze();
+        DstL.Source = bitmapImage;
+      }
+      using (MemoryStream memory = new MemoryStream()) {
+        dst.bmpC.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
+        memory.Position = 0;
+        BitmapImage bitmapImage = new BitmapImage();
+        bitmapImage.BeginInit();
+        bitmapImage.StreamSource = memory;
+        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+        bitmapImage.EndInit();
+        bitmapImage.Freeze();
+        DstC.Source = bitmapImage;
+      }
+    }
+
     private void ShowFilters(bool show) {
       Visibility v = show ? Visibility.Visible : Visibility.Hidden;
 
@@ -1344,7 +1996,7 @@ namespace QPV {
       QuickTags.Visibility = v;
 
       if (show) {
-        switch(chosenFilter) {
+        switch (chosenFilter) {
           case FilterMode.All: RRa.IsChecked = true; break;
           case FilterMode.Unrated: RRu.IsChecked = true; break;
           case FilterMode.Rating0: RR0.IsChecked = true; break;
@@ -1531,6 +2183,12 @@ namespace QPV {
     public SolidColorBrush buttonTagBrushAct = new SolidColorBrush() {
       Color = Color.FromArgb(255, 98, 98, 255)
     };
+    public SolidColorBrush borderImgSel = new SolidColorBrush() {
+      Color = Color.FromArgb(255, 255, 0, 0)
+    };
+    public SolidColorBrush borderImgInv = new SolidColorBrush() {
+      Color = Color.FromArgb(0, 0, 0, 0)
+    };
 
     private void LoadImages(bool replace, bool recursive) {
       CommonOpenFileDialog d = new CommonOpenFileDialog {
@@ -1557,23 +2215,35 @@ namespace QPV {
       if (d.ShowDialog() != CommonFileDialogResult.Ok)
         return;
 
-      if (replace) {
-        Title = "QPV Loading Images" + (recursive ? " (Recursive)" : "");
-        im.CleanUp();
-      }
-      else
-        Title = "QPV Adding Images" + (recursive ? " (Recursive)" : "");
+      Title = "QPV Finding files...";
 
       // Get all image files in the directory, get also the json ratings if any
       string[] allfiles = Directory.GetFiles(d.FileName, "*.*", (recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly));
+      if (replace) {
+        Title = "QPV Loading Images" + (recursive ? " (Recursive)..." : "...");
+        im.CleanUp();
+      }
+      else
+        Title = "QPV Adding Images" + (recursive ? " (Recursive)..." : "...");
+
+      PBar.Visibility = Visibility.Visible;
+      PBar.Minimum = 0;
+      PBar.Maximum = allfiles.Length;
+      PBar.Value = 0;
+      int done = 0;
       foreach (var file in allfiles) {
         FileInfo info = new FileInfo(file);
+        done++;
         string ext = info.Extension.ToLowerInvariant();
         if (ext.Length < 2) continue; // Not interesting
         ext = ext.Substring(1);
 
         if (info.Name.ToLowerInvariant() == "ratings.json") {
-          im.AddRatings(info.DirectoryName, info.FullName);
+          im.AddRatingsHashes(info.DirectoryName, info.FullName, true);
+          continue;
+        }
+        if (info.Name.ToLowerInvariant() == "hashes.json") {
+          im.AddRatingsHashes(info.DirectoryName, info.FullName, false);
           continue;
         }
 
@@ -1581,13 +2251,21 @@ namespace QPV {
 
         // Add to the list and check for the ratings
         im.Add(info.DirectoryName, info.Name);
+
+        if (done % 11 == 0)
+          PBar.Dispatcher.Invoke(new Action(() => {
+            PBar.Value = done;
+          }), DispatcherPriority.ContextIdle);
       }
 
       im.Complete();
+      PBar.Visibility = Visibility.Hidden;
+
       if (im.HasFiles())
         Title = "QPV " + im.GetImagesCount() + " images loaded";
       else
         Title = "QPV  (No images loaded, press O or L to load)";
+
     }
 
     void Timer_Tick(object sender, EventArgs e) {
@@ -1649,8 +2327,8 @@ namespace QPV {
       if (enabledTags.Contains(td))
         enabledTags.Remove(td);
 
-      for(int i=0; i<quickTags.Count; i++)
-        if (quickTags[i].Index==td.ID) {
+      for (int i = 0; i < quickTags.Count; i++)
+        if (quickTags[i].Index == td.ID) {
           quickTags.RemoveAt(i);
           break;
         }
@@ -1785,7 +2463,7 @@ namespace QPV {
       if (img.Tags.Contains(id))
         img.Tags.Remove(id);
       im.ShowImageTags(img);
-      im.needSaving = true;
+      im.needSavingTags = true;
     }
 
     public bool tagsInAndMode = true;
@@ -2034,6 +2712,67 @@ namespace QPV {
         Duplicates.ItemsSource = dups;
       }), DispatcherPriority.ContextIdle);
     }
+
+    private void OnFindSimilarImages(object sender, RoutedEventArgs e) {
+      ShowSimilarityParameters(false);
+
+      if (im.GetImagesCount() > 1000) {
+        if (MessageBox.Show("Warning\nYou have more than " + im.GetImagesCount() + " images.\nThe scan may take a very long time.\n\nDo you want to continue?", "QPV", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK)
+          return;
+      }
+      Title = "QPV Scanning images";
+      Thread.Sleep(60);
+
+      // Do the actual scan
+      Title = "QPV Scanning images and calculating hashes...";
+      im.CalculateHash(Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift) || sender == FFindSimilarImagesButton, UsePixelOffsets.SelectedIndex);
+      selectedSimilar = -1;
+      similarActive = true;
+      mode = prevMode;
+// FIXME      Title = "QPV Scanning of images completed";
+      B0.Visibility = Visibility.Visible;
+      B1.Visibility = Visibility.Visible;
+      B2.Visibility = Visibility.Visible;
+      B3.Visibility = Visibility.Visible;
+      C0.Visibility = Visibility.Visible;
+      C1.Visibility = Visibility.Visible;
+      C2.Visibility = Visibility.Visible;
+      C3.Visibility = Visibility.Visible;
+    }
+
+    private void ShowSimilarityParameters(bool show) {
+      Visibility v = show ? Visibility.Visible : Visibility.Hidden;
+      LLumaWeight.Visibility = v;
+      LChromaWeight.Visibility = v;
+      LMaxDistance.Visibility = v;
+      ChromaWeight.Visibility = v;
+      LumaWeight.Visibility = v;
+      MaxDistance.Visibility = v;
+      LBlurDiff.Visibility = v;
+      BlurDiff.Visibility = v;
+      FindSimilarImagesButton.Visibility = v;
+      FFindSimilarImagesButton.Visibility = v;
+      UsePixelOffsets.Visibility = v;
+    }
+
+    private void OnSliderUpdated(object sender, RoutedPropertyChangedEventArgs<double> e) {
+      if (sender == LumaWeight) {
+        lumaWeight = LumaWeight.Value;
+        LLumaWeight.Content = "Luma Weight: " + lumaWeight;
+      }
+      else if (sender == ChromaWeight) {
+        chromaWeight = ChromaWeight.Value;
+        LChromaWeight.Content = "Chroma Weight: " + chromaWeight;
+      }
+      if (sender == MaxDistance) {
+        maxDistance = MaxDistance.Value;
+        LMaxDistance.Content = "Max Distance: " + maxDistance;
+      }
+      if (sender == BlurDiff) {
+        blurDiff = BlurDiff.Value;
+        LBlurDiff.Content = "Blur Threshold: " + blurDiff;
+      }
+    }
   }
 
 
@@ -2060,14 +2799,122 @@ namespace QPV {
     public long Size;
     public byte[] FirstKb;
 
+    public System.Drawing.Bitmap bmpL; // FIXME remove in future
+    public System.Drawing.Bitmap bmpC; // FIXME remove in future
+    public byte[] _hashL;
+    public byte[] _hashC;
+    public int[] Closest;
+    public int[] Distance;
+    private readonly object syncLock;
+
     public ImageInfo(string path, string name, int rating) {
       ImageName = name;
       Rating = rating;
       Path = path;
       Tags = new HashSet<int>();
       Size = 0;
+
+      Closest = new int[4];
+      Closest[0] = Closest[1] = Closest[2] = Closest[3] = -1;
+      Distance = new int[4];
+      Distance[0] = Distance[1] = Distance[2] = Distance[3] = 1000000000;
+      syncLock = new object();
+  }
+
+    public bool CalculateHash(bool force, double blurDiff) {
+      if (_hashL != null && _hashC != null && !force)
+        return false;
+
+      ImageMatcher.CalculateHash(this, Path + "\\" + ImageName, blurDiff);
+      if (_hashL == null || _hashC == null)
+        return false;
+
+      bmpL = new System.Drawing.Bitmap(16, 16);
+      for (int y = 0; y < 16; y++)
+        for (int x = 0; x < 16; x++)
+          bmpL.SetPixel(x, y, System.Drawing.Color.FromArgb(255, _hashL[x+16*y], _hashL[x+16*y], _hashL[x+16*y]));
+
+      bmpC = new System.Drawing.Bitmap(16, 16);
+      for (int y = 0; y < 16; y++)
+        for (int x = 0; x < 16; x++) {
+          if (_hashC[x + 16 * y] == 0) {
+            bmpC.SetPixel(x, y, System.Drawing.Color.FromArgb(255, 0, 0, 0));
+          } else {
+            RGB rgb = Colors.Colors.HSLtoRGB(360.0 * (_hashC[x + 16 * y] - 1) / 254.0, 1.0, 0.9);
+            bmpC.SetPixel(x, y, System.Drawing.Color.FromArgb(255, rgb.Red, rgb.Green, rgb.Blue));
+          }
+        }
+
+      return true;
+    }
+
+    static string hashSerializer = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890!@#$%^&*()[]{};:'`~,./<>?|¡¢£¤¥¦§©ª«¬­®¯°±²³µ¶¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňŉŋŘ";
+
+    internal string SerializeHashes() {
+      string res = "";
+      if (_hashL == null || _hashC == null) return "";
+      for (int i = 0; i < 256; i++) {
+        res += hashSerializer.Substring((int)_hashL[i], 1);
+      }
+      res += " ";
+      for (int i = 0; i < 256; i++) {
+        res += hashSerializer.Substring((int)_hashC[i], 1);
+      }
+      return res;
+    }
+
+    internal void UpdateHash(string hash) {
+      if (_hashL == null) _hashL = new byte[256];
+      if (_hashC == null) _hashC = new byte[256];
+      for (int i = 0; i < 256; i++) {
+        _hashL[i] = (byte)hashSerializer.IndexOf(hash.Substring(i, 1));
+        _hashC[i] = (byte)hashSerializer.IndexOf(hash.Substring(257 + i, 1));
+      }
+
+      bmpL = new System.Drawing.Bitmap(16, 16);
+      for (int y = 0; y < 16; y++)
+        for (int x = 0; x < 16; x++)
+          bmpL.SetPixel(x, y, System.Drawing.Color.FromArgb(255, _hashL[x + 16 * y], _hashL[x + 16 * y], _hashL[x + 16 * y]));
+
+      bmpC = new System.Drawing.Bitmap(16, 16);
+      for (int y = 0; y < 16; y++)
+        for (int x = 0; x < 16; x++) {
+          if (_hashC[x + 16 * y] == 0) {
+            bmpC.SetPixel(x, y, System.Drawing.Color.FromArgb(255, 0, 0, 0));
+          }
+          else {
+            RGB rgb = Colors.Colors.HSLtoRGB(360.0 * (_hashC[x + 16 * y] - 1) / 254.0, 1.0, 0.9);
+            bmpC.SetPixel(x, y, System.Drawing.Color.FromArgb(255, rgb.Red, rgb.Green, rgb.Blue));
+          }
+        }
+    }
+
+    internal bool SetDistance(double distance, int dst) {
+      if (distance == 1000000000) return false;
+
+      lock (syncLock) {
+        int dd = (int)distance;
+        if (dd > Distance[3]) return false;
+        for (int pos = 0; pos < 4; pos++) {
+          if (dd < Distance[pos]) {
+            for (int i = 3; i > pos; i--) {
+              Distance[i] = Distance[i - 1];
+              Closest[i] = Closest[i - 1];
+            }
+            Distance[pos] = dd;
+            Closest[pos] = dst;
+            return true;
+          }
+        }
+        return false;
+      }
     }
   }
+
+
+
+
+
 
   public class DuplicateImage {
     public string Path { get; set; }
@@ -2122,6 +2969,178 @@ namespace QPV {
     public bool Selected { get; set; }
     public int Index { get; set; }
   }
+
+
+
+
 }
 
 
+
+
+
+namespace Colors {
+  public struct RGB {
+    public static readonly RGB Empty = new RGB();
+
+    private int red;
+    private int green;
+    private int blue;
+
+    public static bool operator ==(RGB item1, RGB item2) {
+      return (
+          item1.Red == item2.Red
+          && item1.Green == item2.Green
+          && item1.Blue == item2.Blue
+          );
+    }
+
+    public static bool operator !=(RGB item1, RGB item2) {
+      return (
+          item1.Red != item2.Red
+          || item1.Green != item2.Green
+          || item1.Blue != item2.Blue
+          );
+    }
+
+    public int Red {
+      get { return red; }
+      set { red = (value > 255) ? 255 : ((value < 0) ? 0 : value); }
+    }
+
+    public int Green {
+      get { return green; }
+      set { green = (value > 255) ? 255 : ((value < 0) ? 0 : value); }
+    }
+
+    public int Blue {
+      get { return blue; }
+      set { blue = (value > 255) ? 255 : ((value < 0) ? 0 : value); }
+    }
+
+    public RGB(int R, int G, int B) {
+      this.red = (R > 255) ? 255 : ((R < 0) ? 0 : R);
+      this.green = (G > 255) ? 255 : ((G < 0) ? 0 : G);
+      this.blue = (B > 255) ? 255 : ((B < 0) ? 0 : B);
+    }
+
+    public override bool Equals(Object obj) {
+      if (obj == null || GetType() != obj.GetType()) return false;
+      return (this == (RGB)obj);
+    }
+
+    public override int GetHashCode() {
+      return Red.GetHashCode() ^ Green.GetHashCode() ^ Blue.GetHashCode();
+    }
+  }
+
+  public struct HSL {
+    public static readonly HSL Empty = new HSL();
+
+    private double hue;
+    private double saturation;
+    private double luminance;
+
+    public static bool operator ==(HSL item1, HSL item2) {
+      return (item1.Hue == item2.Hue && item1.Saturation == item2.Saturation && item1.Luminance == item2.Luminance);
+    }
+
+    public static bool operator !=(HSL item1, HSL item2) {
+      return (item1.Hue != item2.Hue || item1.Saturation != item2.Saturation || item1.Luminance != item2.Luminance);
+    }
+
+    public double Hue {
+      get { return hue; }
+      set { hue = (value > 360) ? 360 : ((value < 0) ? 0 : value); }
+    }
+
+    public double Saturation {
+      get { return saturation; }
+      set { saturation = (value > 1) ? 1 : ((value < 0) ? 0 : value); }
+    }
+
+    public double Luminance {
+      get { return luminance; }
+      set { luminance = (value > 1) ? 1 : ((value < 0) ? 0 : value); }
+    }
+
+    public HSL(double h, double s, double l) {
+      hue = (h > 360) ? 360 : ((h < 0) ? 0 : h);
+      saturation = (s > 1) ? 1 : ((s < 0) ? 0 : s);
+      luminance = (l > 1) ? 1 : ((l < 0) ? 0 : l);
+    }
+
+    public override bool Equals(Object obj) {
+      if (obj == null || GetType() != obj.GetType()) return false;
+      return (this == (HSL)obj);
+    }
+
+    public override int GetHashCode() {
+      return Hue.GetHashCode() ^ Saturation.GetHashCode() ^ Luminance.GetHashCode();
+    }
+  }
+
+  class Colors {
+    public static HSL RGBtoHSL(int red, int green, int blue) {
+      double h = 0, s = 0, l = 0;
+      double r = (double)red / 255.0;
+      double g = (double)green / 255.0;
+      double b = (double)blue / 255.0;
+      double max = Math.Max(r, Math.Max(g, b));
+      double min = Math.Min(r, Math.Min(g, b));
+
+      // hue
+      if (max == min) { h = 0; } // undefined 
+      else if (max == r && g >= b) { h = 60.0 * (g - b) / (max - min); }
+      else if (max == r && g < b) { h = 60.0 * (g - b) / (max - min) + 360.0; }
+      else if (max == g) { h = 60.0 * (b - r) / (max - min) + 120.0; }
+      else if (max == b) { h = 60.0 * (r - g) / (max - min) + 240.0; }
+
+      // luminance
+      l = (max + min) / 2.0;
+
+      // saturation
+      if (l == 0 || max == min) { s = 0; }
+      else if (0 < l && l <= 0.5) { s = (max - min) / (max + min); }
+      else if (l > 0.5) { s = (max - min) / (2 - (max + min)); } //(max-min > 0)?
+
+      return new HSL(Double.Parse(String.Format("{0:0.##}", h)), Double.Parse(String.Format("{0:0.##}", s)), Double.Parse(String.Format("{0:0.##}", l)));
+    }
+
+    public static RGB HSLtoRGB(double h, double s, double l) {
+      if (s == 0) { // achromatic color (gray scale)
+        return new RGB(Convert.ToInt32(Double.Parse(String.Format("{0:0.00}", l * 255.0))), Convert.ToInt32(Double.Parse(String.Format("{0:0.00}", l * 255.0))), Convert.ToInt32(Double.Parse(String.Format("{0:0.00}", l * 255.0))));
+      }
+      else {
+        double q = (l < 0.5) ? (l * (1.0 + s)) : (l + s - (l * s));
+        double p = (2.0 * l) - q;
+
+        double Hk = h / 360.0;
+        double[] T = new double[3];
+        T[0] = Hk + (1.0 / 3.0);    // Tr
+        T[1] = Hk;                // Tb
+        T[2] = Hk - (1.0 / 3.0);    // Tg
+
+        for (int i = 0; i < 3; i++) {
+          if (T[i] < 0) T[i] += 1.0;
+          if (T[i] > 1) T[i] -= 1.0;
+
+          if ((T[i] * 6) < 1) {
+            T[i] = p + ((q - p) * 6.0 * T[i]);
+          }
+          else if ((T[i] * 2.0) < 1) //(1.0/6.0)<=T[i] && T[i]<0.5
+          {
+            T[i] = q;
+          }
+          else if ((T[i] * 3.0) < 2) // 0.5<=T[i] && T[i]<(2.0/3.0)
+          {
+            T[i] = p + (q - p) * ((2.0 / 3.0) - T[i]) * 6.0;
+          }
+          else T[i] = p;
+        }
+
+        return new RGB(Convert.ToInt32(Double.Parse(String.Format("{0:0.00}", T[0] * 255.0))), Convert.ToInt32(Double.Parse(String.Format("{0:0.00}", T[1] * 255.0))), Convert.ToInt32(Double.Parse(String.Format("{0:0.00}", T[2] * 255.0))));
+      }
+    }
+  }
+}

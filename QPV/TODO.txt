@@ -34,7 +34,22 @@
 !Q quicktag
 !Update help for Q and D and the new way to find by tags
 !Remove the quick tags if we remove a tag, rename them if we rename a tag
+!Find visually simiar images
+!Go multitasking in calculating the Hashes
+!Save the scanned images on a separate json (ImageHashes.json) {"ImageName":"HashOnBase32L HashOnBase32C"}
+!Check also for a single pixel off in 8 direction for the distance. But make it optional, power consuming and probably will not find new images
+!Show how similar the images are by adding a small bar under each similar image. Scale with the defined distances for the matches
+
+
+Use the pixel offset only if required, replace the checkmark with a dropdown with the possible values (0, 1, 2, 3, 4) pixels
+
 
 
 FUTURE
 - associate names with avatar images and have a list of preview by avatar
+
+
+
+
+
+

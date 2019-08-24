@@ -152,12 +152,15 @@
 
     <!--  Define tags -->
     <!--  Grid, ErrorMissingTags -->
-    <TextBlock Name="StartMessage" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Visibility="Visible" xml:space="preserve">
+    <TextBlock Name="StartMessage" HorizontalAlignment="Left" Margin="10,20,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Visibility="Visible" xml:space="preserve">
       <Span FontSize="20">Welcome to <Bold>Quick Picture View</Bold></Span><LineBreak/>
-      Open a folder of pictures with <Bold>O</Bold> or define the Tags with <Bold>F5</Bold>
+      Open a folder of pictures with <Bold>O</Bold> (<Bold>Shift</Bold>+<Bold>O</Bold> to get subfolders) or define the Tags with <Bold>F5</Bold>
       Press <Bold>H</Bold> so see the help.
     </TextBlock>
-    
+    <ProgressBar Name="PBar" Height="32" Margin="0" VerticalAlignment="Top"/>
+
+
+
     <!--  Help -->
     <TextBlock Name="Help" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" xml:space="preserve" Visibility="Hidden">
 <Bold>Quick Picture Viewer Help</Bold>:<LineBreak/>
@@ -191,6 +194,10 @@
       
   - <Bold>F5</Bold>: Definition of Tags
       Here you can create, rename, and remove the tags that can be possible for the images
+      
+  - <Bold>F6</Bold>: Find similar images
+      If you click, all images are scanned and the 4 most similar images are calculated. Use <Bold>Page Up</Bold>/<Bold>Page Down</Bold> to select a similar image and <Bold>Enter</Bold> to jump to it
+          <Italic>Warning: scanning the images may require a lot of time!</Italic>
       
  <Bold>Escape</Bold> will exist the application
  <Bold>F11</Bold> to switch between Fullscreen and Window modes
@@ -286,5 +293,56 @@
 
       <Image Name="PreviewImage" Margin="0,0,0,0" Grid.Row="0" Grid.Column="1"/>
     </Grid>
+
+    <Rectangle Name="R0" Width="128" Height="4" Margin="0,520" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Visible" Fill="Lime"/>
+    <Label Name="P0" Content="0%" Margin="128,510" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Visible"/>
+    <Border Name="B0" BorderThickness="1" BorderBrush="#00000000" Margin="0,390" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Visible">
+      <Image Name="C0" Width="128" Height="128" Source="Images/Yes.png" Visibility="Visible"/>
+    </Border>
+
+    <Rectangle Name="R1" Width="128" Height="4" Margin="0,390" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Visible" Fill="Lime"/>
+    <Label Name="P1" Content="0%" Margin="128,380" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Visible"/>
+    <Border Name="B1" BorderThickness="1" BorderBrush="#00000000" Margin="0,260" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Visible">
+      <Image Name="C1" Width="128" Height="128" Source="Images/Yes.png" Visibility="Visible"/>
+    </Border>
+
+    <Rectangle Name="R2" Width="128" Height="4" Margin="0,260" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Visible" Fill="Lime"/>
+    <Label Name="P2" Content="0%" Margin="128,250" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Visible"/>
+    <Border Name="B2" BorderThickness="1" BorderBrush="#00000000" Margin="0,130" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Visible">
+      <Image Name="C2" Width="128" Height="128" Source="Images/Yes.png" Visibility="Visible"/>
+    </Border>
+
+    <Rectangle Name="R3" Width="128" Height="4" Margin="0,130" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Visible" Fill="Lime"/>
+    <Label Name="P3" Content="0%" Margin="128,120" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Visible"/>
+    <Border Name="B3" BorderThickness="1" BorderBrush="#00000000" Margin="0,0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Visible">
+      <Image Name="C3" Width="128" Height="128" Source="Images/Yes.png" Visibility="Visible"/>
+    </Border>
+
+    <Image Name="SrcL" Width="64" Height="128" Source="Images/Yes.png" Margin="0,0,66,0" Visibility="Visible" HorizontalAlignment="Right" VerticalAlignment="Top" />
+    <Image Name="SrcC" Width="64" Height="64" Source="Images/Yes.png" Margin="0,0,0,0" Visibility="Visible" HorizontalAlignment="Right" VerticalAlignment="Top" />
+    <Image Name="DstL" Width="64" Height="64" Source="Images/Yes.png" Margin="0,66,66,0" Visibility="Visible" HorizontalAlignment="Right" VerticalAlignment="Top" />
+    <Image Name="DstC" Width="64" Height="64" Source="Images/Yes.png" Margin="0,66,0,0" Visibility="Visible" HorizontalAlignment="Right" VerticalAlignment="Top" />
+
+    <Label Name="LLumaWeight" Content="Luma weight" Margin="20,200" HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Hidden"/>
+    <Slider Name="LumaWeight" HorizontalAlignment="Left" Margin="20,220,0,0" VerticalAlignment="Top" Width="200" SmallChange="1" TickPlacement="BottomRight" Value="3" IsSnapToTickEnabled="True" ValueChanged="OnSliderUpdated" Visibility="Hidden"/>
+    <Label Name="LChromaWeight" Content="Chroma weight" Margin="20,250" HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Hidden"/>
+    <Slider Name="ChromaWeight" HorizontalAlignment="Left" Margin="20,270,0,0" VerticalAlignment="Top" Width="200" SmallChange="1" TickPlacement="BottomRight" Value="2" IsSnapToTickEnabled="True" ValueChanged="OnSliderUpdated" Visibility="Hidden"/>
+    <Label Name="LMaxDistance" Content="Max distance" Margin="20,300" HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Hidden"/>
+    <Slider Name="MaxDistance" HorizontalAlignment="Left" Margin="20,320,0,0" VerticalAlignment="Top" Width="200" Maximum="100" SmallChange="1" Value="10" TickFrequency="1" TickPlacement="BottomRight" IsSnapToTickEnabled="True" ValueChanged="OnSliderUpdated" Visibility="Hidden"/>
+    <Label Name="LBlurDiff" Content="Blur Threshold" Margin="20,350" HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Hidden"/>
+    <Slider Name="BlurDiff" HorizontalAlignment="Left" Margin="20,370,0,0" VerticalAlignment="Top" Width="200" Maximum="0.2" SmallChange="0.01" Value="0.02" TickFrequency="0.01" TickPlacement="BottomRight" IsSnapToTickEnabled="True" ValueChanged="OnSliderUpdated" Visibility="Hidden"/>
+
+    <Label Name="LUsePixelOffsets" Content="Use sub Pixels" Margin="20,400" HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Hidden"/>
+    <ComboBox Name="UsePixelOffsets" HorizontalAlignment="Left" Margin="20,470,0,0" VerticalAlignment="Top" Width="200" Visibility="Hidden">
+      <ComboBoxItem Content="Don't use (0 pixels)"/>
+      <ComboBoxItem Content="Use 1 pixel"/>
+      <ComboBoxItem Content="Use 2 pixels"/>
+      <ComboBoxItem Content="Use 3 pixels"/>
+      <ComboBoxItem Content="Use 4 pixels"/>
+    </ComboBox>
+
+
+    <Button Name="FindSimilarImagesButton" Content="Scan Images" Click="OnFindSimilarImages" Margin="20,500,0,0" Width="130" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Hidden"/>
+    <Button Name="FFindSimilarImagesButton" Content="Scan Images (force)" Click="OnFindSimilarImages" Margin="20,550,0,0" Width="130" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Hidden"/>
   </Grid>
 </Window>
